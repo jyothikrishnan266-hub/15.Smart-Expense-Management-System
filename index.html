@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Management System</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- XLSX for Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="login-page">
+    <div class="login-box">
+        <h1>💰 Expense Manager</h1>
+        <p>Manage your income and expenses easily</p>
+
+        <input type="text" id="loginUsername" placeholder="Username">
+        <input type="password" id="loginPassword" placeholder="Password">
+
+        <button onclick="login()">Login</button>
+
+        <p class="demo">
+            Demo: admin / admin123
+        </p>
+    </div>
+</div>
+
+
+<!-- MAIN APPLICATION -->
+<div id="app" class="app hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <h2>💰 Expense Manager</h2>
+
+        <nav>
+            <button onclick="showSection('dashboard')">📊 Dashboard</button>
+            <button onclick="showSection('expenses')">💳 Expenses</button>
+            <button onclick="showSection('income')">💵 Income</button>
+            <button onclick="showSection('budget')">🎯 Budget</button>
+            <button onclick="showSection('reports')">📈 Reports</button>
+            <button onclick="showSection('history')">📋 History</button>
+            <button onclick="showSection('users')">👥 Users</button>
+        </nav>
+
+        <button class="logout" onclick="logout()">🚪 Logout</button>
+    </aside>
+
+
+    <!-- CONTENT -->
+    <main class="content">
+
+        <header class="topbar">
+            <div>
+                <h1 id="pageTitle">Dashboard</h1>
+                <p id="welcomeText">Welcome back!</p>
+            </div>
+
+            <div class="notification">
+                🔔 <span id="notificationCount">0</span>
+            </div>
+        </header>
+
+
+        <!-- DASHBOARD -->
+        <section id="dashboard" class="section">
+
+            <div class="cards">
+
+                <div class="card income-card">
+                    <h3>Total Income</h3>
+                    <h2 id="totalIncome">₹0</h2>
+                </div>
+
+                <div class="card expense-card">
+                    <h3>Total Expenses</h3>
+                    <h2 id="totalExpense">₹0</h2>
+                </div>
+
+                <div class="card balance-card">
+                    <h3>Balance</h3>
+                    <h2 id="balance">₹0</h2>
+                </div>
+
+                <div class="card budget-card">
+                    <h3>Monthly Budget</h3>
+                    <h2 id="dashboardBudget">₹0</h2>
+                </div>
+
+            </div>
+
+            <div class="dashboard-grid">
+
+                <div class="panel">
+                    <h2>Expense Overview</h2>
+                    <canvas id="expenseChart"></canvas>
+                </div>
+
+                <div class="panel">
+                    <h2>Recent Expenses</h2>
+                    <div id="recentExpenses"></div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- EXPENSES -->
+        <section id="expenses" class="section hidden">
+
+            <div class="panel">
+
+                <h2>Add Expense</h2>
+
+                <form id="expenseForm">
+
+                    <input type="hidden" id="expenseId">
+
+                    <div class="form-grid">
+
+                        <input type="text"
+                               id="expenseTitle"
+                               placeholder="Expense Title"
+                               required>
+
+                        <input type="number"
+                               id="expenseAmount"
+                               placeholder="Amount"
+                               min="1"
+                               required>
+
+                        <select id="expenseCategory" required>
+                            <option value="">Select Category</option>
+                            <option>Food</option>
+                            <option>Travel</option>
+                            <option>Shopping</option>
+                            <option>Medical</option>
+                            <option>Education</option>
+                            <option>Bills</option>
+                            <option>Entertainment</option>
+                            <option>Other</option>
+                        </select>
+
+                        <input type="date"
+                               id="expenseDate"
+                               required>
+
+                        <input type="file"
+                               id="receipt"
+                               accept="image/*,.pdf">
+
+                        <select id="expenseStatus">
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+
+                    </div>
+
+                    <textarea id="expenseDescription"
+                              placeholder="Description"></textarea>
+
+                    <button type="submit">
+                        Save Expense
+                    </button>
+
+                </form>
+            </div>
+
+
+            <div class="panel">
+
+                <div class="table-header">
+                    <h2>Expenses</h2>
+
+                    <div>
+                        <input type="text"
+                               id="searchExpense"
+                               placeholder="Search expenses..."
+                               onkeyup="displayExpenses()">
+
+                        <select id="filterCategory"
+                                onchange="displayExpenses()">
+                            <option value="">All Categories</option>
+                            <option>Food</option>
+                            <option>Travel</option>
+                            <option>Shopping</option>
+                            <option>Medical</option>
+                            <option>Education</option>
+                            <option>Bills</option>
+                            <option>Entertainment</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Amount</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Receipt</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="expenseTable"></tbody>
+
+                    </table>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- INCOME -->
+        <section id="income" class="section hidden">
+
+            <div class="panel">
+
+                <h2>Add Income</h2>
+
+                <form id="incomeForm">
+
+                    <div class="form-grid">
+
+                        <input type="text"
+                               id="incomeTitle"
+                               placeholder="Income Source"
+                               required>
+
+                        <input type="number"
+                               id="incomeAmount"
+                               placeholder="Amount"
+                               min="1"
+                               required>
+
+                        <input type="date"
+                               id="incomeDate"
+                               required>
+
+                    </div>
+
+                    <button type="submit">
+                        Add Income
+                    </button>
+
+                </form>
+
+            </div>
+
+            <div class="panel">
+
+                <h2>Income History</h2>
+
+                <div class="table-container">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="incomeTable"></tbody>
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- BUDGET -->
+        <section id="budget" class="section hidden">
+
+            <div class="panel">
+
+                <h2>Budget Management</h2>
+
+                <form id="budgetForm">
+
+                    <input type="number"
+                           id="budgetAmount"
+                           placeholder="Monthly Budget"
+                           min="0"
+                           required>
+
+                    <button type="submit">
+                        Set Budget
+                    </button>
+
+                </form>
+
+                <div class="budget-progress">
+
+                    <h3>
+                        Budget Usage:
+                        <span id="budgetText">₹0 / ₹0</span>
+                    </h3>
+
+                    <div class="progress">
+                        <div id="progressBar"></div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- REPORTS -->
+        <section id="reports" class="section hidden">
+
+            <div class="panel">
+
+                <h2>Reports & Analytics</h2>
+
+                <div class="report-buttons">
+
+                    <button onclick="exportExcel()">
+                        📊 Export Excel
+                    </button>
+
+                    <button onclick="exportPDF()">
+                        📄 Export PDF
+                    </button>
+
+                </div>
+
+                <canvas id="reportChart"></canvas>
+
+            </div>
+
+        </section>
+
+
+        <!-- HISTORY -->
+        <section id="history" class="section hidden">
+
+            <div class="panel">
+
+                <h2>Expense History</h2>
+
+                <div id="historyList"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- USERS -->
+        <section id="users" class="section hidden">
+
+            <div class="panel">
+
+                <h2>User & Admin Management</h2>
+
+                <form id="userForm">
+
+                    <div class="form-grid">
+
+                        <input type="text"
+                               id="newUsername"
+                               placeholder="Username"
+                               required>
+
+                        <input type="password"
+                               id="newPassword"
+                               placeholder="Password"
+                               required>
+
+                        <select id="newRole">
+                            <option>Employee</option>
+                            <option>Manager</option>
+                            <option>Admin</option>
+                        </select>
+
+                    </div>
+
+                    <button type="submit">
+                        Add User
+                    </button>
+
+                </form>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="userTable"></tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
